@@ -5,17 +5,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
-    base_log_dir = "logs/geometry_comparison"
+    base_log_dir = "logs"
     all_data = []
     
     for root, dirs, files in os.walk(base_log_dir):
         for file in files:
             if file.endswith('.json'):
                 folder_name = os.path.basename(root)
+                if not folder_name.startswith('N_'): continue
+                
+                n_value = int(folder_name.split('_')[1])
                 file_path = os.path.join(root, file)
                 with open(file_path, 'r') as f:
                     data = json.load(f)
-                    data['shape'] = folder_name
+                    data['N'] = n_value
                     all_data.append(data)
                         
     if not all_data:
@@ -24,62 +27,50 @@ def main():
         
     df = pd.DataFrame(all_data)
     
-    # Calculate Success Rate
-    success_rate = df.groupby('shape')['success'].mean() * 100
+    # Calculate Metrics
+    summary = df.groupby('N').agg(
+        success_rate=('success', lambda x: x.mean() * 100),
+        mean_duration=('duration', 'mean'),
+        mean_shuffles=('total_shuffles', 'mean'),
+        mean_tortuosity=('tortuosity', 'mean')
+    ).reset_index()
     
-    # Calculate Mean Shuffles per Success
-    success_df = df[df['success'] == True]
-    if not success_df.empty:
-        mean_shuffles_success = success_df.groupby('shape')['total_shuffles'].mean()
-    else:
-        mean_shuffles_success = pd.Series()
-        
-    print("=== GEOMETRY COMPARISON RESULTS ===")
-    print("\nSuccess Rate (%):")
-    print(success_rate)
-    print("\nMean Shuffles (Successful Trials):")
-    print(mean_shuffles_success)
+    # Save JSON summary
+    summary.to_json('results_summary.json', orient='records')
+    print("Saved results_summary.json")
     
     # Generate Plots
     plt.figure(figsize=(18, 6))
     
-    # 1. Success Rate Comparison
+    # 1. Success Rate Curve
     plt.subplot(1, 3, 1)
-    success_rate.plot(kind='bar', color=['orange', 'skyblue'])
-    plt.title('Success Rate: Square vs L-Shape')
+    plt.plot(summary['N'], summary['success_rate'], marker='o', linewidth=2, color='green')
+    plt.title('Success Rate vs. Swarm Density (N)')
     plt.ylabel('Success Rate (%)')
-    plt.xlabel('Geometry Shape')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.xlabel('Swarm Density (N)')
+    plt.grid(True, linestyle='--', alpha=0.7)
     
-    # 2. Shuffle Density
+    # 2. Shuffles vs Duration
     plt.subplot(1, 3, 2)
-    if not mean_shuffles_success.empty:
-        mean_shuffles_success.plot(kind='bar', color=['orange', 'skyblue'])
-        plt.title('Shuffle Density (Mean Shuffles per Success)')
-        plt.ylabel('Average Shuffles')
-        plt.xlabel('Geometry Shape')
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
-    else:
-        plt.text(0.5, 0.5, 'No Successful Trials', horizontalalignment='center', verticalalignment='center')
+    plt.plot(summary['N'], summary['mean_shuffles'], marker='s', linewidth=2, color='orange')
+    plt.title('Mean Shuffles vs N')
+    plt.ylabel('Average Shuffles')
+    plt.xlabel('Swarm Density (N)')
+    plt.grid(True, linestyle='--', alpha=0.7)
         
-    # 3. Tortuosity vs Duration Scatter
+    # 3. Path Tortuosity
     plt.subplot(1, 3, 3)
     
-    square_df = df[df['shape'] == 'square']
-    l_shape_df = df[df['shape'] == 'l_shape']
+    plt.plot(summary['N'], summary['mean_tortuosity'], marker='^', linewidth=2, color='purple')
     
-    plt.scatter(square_df['duration'], square_df['tortuosity'], alpha=0.6, color='orange', label='Square', s=100)
-    plt.scatter(l_shape_df['duration'], l_shape_df['tortuosity'], alpha=0.6, color='skyblue', label='L-Shape', s=100)
-    
-    plt.legend()
-    plt.title('Path Analysis: Tortuosity vs Time')
-    plt.xlabel('Simulation Duration (s)')
+    plt.title('Mean Tortuosity vs N')
+    plt.xlabel('Swarm Density (N)')
     plt.ylabel('Path Tortuosity')
-    plt.grid(True)
+    plt.grid(True, linestyle='--', alpha=0.7)
     
     plt.tight_layout()
-    plt.savefig('geometry_comparison.png', dpi=300)
-    print("\nThesis plots saved to 'geometry_comparison.png'.")
+    plt.savefig('experiment_results.png', dpi=300)
+    print("\nThesis plots saved to 'experiment_results.png'.")
 
 if __name__ == "__main__":
     main()

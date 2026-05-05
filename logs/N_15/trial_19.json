@@ -1,8 +1,8 @@
 {
     "trial_id": 19,
-    "success": false,
-    "duration": 1.446728229522705,
-    "total_shuffles": 18,
-    "average_velocity": 2.580984766873165,
-    "tortuosity": 1.759019176667401
+    "success": true,
+    "duration": 0.15871739387512207,
+    "total_shuffles": 15,
+    "average_velocity": 40.198658309449414,
+    "tortuosity": 3.3266493859923703
 }

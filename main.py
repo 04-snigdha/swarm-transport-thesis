@@ -13,6 +13,10 @@ if os.environ.get('HEADLESS') == '1':
 
 from environment import Environment
 from geometry_utils import create_l_shape_payload
+from agents import Agent
+
+def do_attach(space, agent, payload_body, contact_point):
+    agent.attach(payload_body, contact_point)
 
 def main():
     pygame.init()
@@ -29,11 +33,37 @@ def main():
     # Spawn payload on the left side of the gap
     payload_body, payload_shapes = create_l_shape_payload(env.space, (200, 300), mass=20.0)
     
+    # Sprint 2: The Gripping Swarm
+    agents = []
+    for i in range(20):
+        # Spawn near bottom left
+        x = 50 + (i % 5) * 20
+        y = 500 + (i // 5) * 20
+        agent = Agent(env.space, (x, y))
+        agent.target_payload = payload_body
+        agents.append(agent)
+
+    # Collision handler for attachment
+    def attach_handler(arbiter, space, data):
+        payload_shape, agent_shape = arbiter.shapes
+        for agent in agents:
+            if agent.shape == agent_shape and agent.state == 1: # SEARCHING
+                contact_point = arbiter.contact_point_set.points[0].point_a
+                space.add_post_step_callback(do_attach, agent, payload_shape.body, contact_point)
+        return True
+    env.space.on_collision(1, 2, begin=attach_handler)
+    
+    gap_position = (500, 300)
+
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                
+        # Agent updates
+        for agent in agents:
+            agent.update(gap_position)
                 
         # Physics step
         dt = 1.0 / 60.0

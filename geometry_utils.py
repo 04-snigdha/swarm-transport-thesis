@@ -45,3 +45,21 @@ def get_perimeter_points(body):
         if isinstance(shape, pymunk.Poly):
             vertices.extend(shape.get_vertices())
     return vertices
+
+def get_bounding_box(body):
+    """
+    Calculates the AABB bounding box for the composite body.
+    """
+    min_x, min_y = float('inf'), float('inf')
+    max_x, max_y = float('-inf'), float('-inf')
+    
+    for shape in body.shapes:
+        if isinstance(shape, pymunk.Poly):
+            for v in shape.get_vertices():
+                wv = body.local_to_world(v)
+                min_x = min(min_x, wv.x)
+                min_y = min(min_y, wv.y)
+                max_x = max(max_x, wv.x)
+                max_y = max(max_y, wv.y)
+                
+    return (min_x, min_y, max_x, max_y)

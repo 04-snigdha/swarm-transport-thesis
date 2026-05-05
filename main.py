@@ -6,44 +6,39 @@ import pymunk
 import pymunk.pygame_util
 import sys
 import os
-
-# Set dummy videodriver if headless environment is required
-if os.environ.get('HEADLESS') == '1':
-    os.environ['SDL_VIDEODRIVER'] = 'dummy'
+import argparse
+import time
 
 from environment import Environment
 from geometry_utils import create_l_shape_payload
 from agents import Agent
+from telemetry import TelemetryLogger
 
 def do_attach(space, agent, payload_body, contact_point):
     agent.attach(payload_body, contact_point)
 
-def main():
+def run_trial(trial_id, headless, width, height, max_steps=5000):
+    if headless:
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+        
     pygame.init()
-    width, height = 800, 600
     screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption("Swarm-Based Geometric Transport")
+    pygame.display.set_caption(f"Swarm-Based Geometric Transport - Trial {trial_id}")
     clock = pygame.time.Clock()
-    
+    font = pygame.font.SysFont(None, 24)
     draw_options = pymunk.pygame_util.DrawOptions(screen)
     
-    # Sprint 1: Setup Environment and Payload
     env = Environment(width, height)
-    
-    # Spawn payload on the left side of the gap
     payload_body, payload_shapes = create_l_shape_payload(env.space, (200, 300), mass=20.0)
     
-    # Sprint 2: The Gripping Swarm
     agents = []
     for i in range(20):
-        # Spawn near bottom left
         x = 50 + (i % 5) * 20
         y = 500 + (i // 5) * 20
         agent = Agent(env.space, (x, y))
         agent.target_payload = payload_body
         agents.append(agent)
 
-    # Collision handler for attachment
     def attach_handler(arbiter, space, data):
         payload_shape, agent_shape = arbiter.shapes
         for agent in agents:
@@ -54,17 +49,24 @@ def main():
     env.space.on_collision(1, 2, begin=attach_handler)
     
     gap_position = (500, 300)
-
+    telemetry = TelemetryLogger()
+    
+    steps = 0
+    success = False
     running = True
-    while running:
+    
+    while running and steps < max_steps:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_s and not headless:
+                    pygame.image.save(screen, f"screenshot_manual_{time.time()}.png")
+                    print("Manual screenshot saved.")
                 
         # Agent updates
         for agent in agents:
             agent.update(gap_position)
-            # Visual feedback (Green -> Yellow -> Red based on frustration)
             ratio = min(1.0, agent.frustration / agent.frustration_limit)
             r = int(50 + ratio * 205)
             g = int(150 - ratio * 150)
@@ -74,15 +76,66 @@ def main():
         dt = 1.0 / 60.0
         env.step(dt)
         
-        # Render
-        screen.fill((240, 240, 240)) # Light gray background
-        env.space.debug_draw(draw_options)
+        # Telemetry
+        telemetry.log_step(payload_body, agents)
         
-        pygame.display.flip()
-        clock.tick(60)
+        # Check success (gap traversed)
+        if payload_body.position.x > 550:
+            success = True
+            running = False
+            if not headless:
+                pygame.image.save(screen, f"screenshot_success_{trial_id}.png")
+                print(f"Success! Screenshot saved for trial {trial_id}.")
+        
+        # Render
+        if not headless:
+            screen.fill((240, 240, 240))
+            
+            # Trajectory Mapper (Onion Skin effect)
+            if len(telemetry.trajectory_history) > 1:
+                pygame.draw.lines(screen, (100, 100, 255), False, telemetry.trajectory_history, 2)
+            
+            env.space.debug_draw(draw_options)
+            
+            # HUD
+            total_frustration = sum(a.frustration for a in agents)
+            total_shuffles = sum(a.shuffle_events for a in agents)
+            hud_text = [
+                f"Trial: {trial_id} | Steps: {steps}",
+                f"Velocity: {payload_body.velocity.length:.2f}",
+                f"Avg Frustration: {total_frustration/len(agents):.2f}",
+                f"Total Shuffles: {total_shuffles}"
+            ]
+            for i, txt in enumerate(hud_text):
+                surf = font.render(txt, True, (0, 0, 0))
+                screen.blit(surf, (10, 10 + i*25))
+            
+            pygame.display.flip()
+            clock.tick(60)
+            
+        steps += 1
 
+    total_shuffles = sum(a.shuffle_events for a in agents)
+    data = telemetry.save_trial(trial_id, success, total_shuffles)
     pygame.quit()
-    sys.exit()
+    return data
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--batch', action='store_true', help='Run 50 trials headless')
+    parser.add_argument('--trials', type=int, default=1, help='Number of trials to run')
+    args = parser.parse_args()
+    
+    width, height = 800, 600
+    
+    # If HEADLESS env var is set, enforce headless
+    headless = args.batch or os.environ.get('HEADLESS') == '1'
+    num_trials = 50 if args.batch else args.trials
+    
+    for i in range(num_trials):
+        print(f"--- Starting Trial {i+1}/{num_trials} ---")
+        data = run_trial(i+1, headless, width, height)
+        print(f"Trial {i+1} completed. Success: {data['success']}, Duration: {data['duration']:.2f}s")
 
 if __name__ == "__main__":
     main()

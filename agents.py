@@ -28,6 +28,7 @@ class Agent:
         self.frustration = 0.0
         self.frustration_limit = 100.0
         self.shuffle_target = None
+        self.shuffle_events = 0
 
     def _move_towards(self, tx, ty):
         dx = tx - self.body.position.x
@@ -82,6 +83,7 @@ class Agent:
             self.space.remove(self.joint)
             self.joint = None
             self.state = AgentState.SHUFFLING
+            self.shuffle_events += 1
             
             # Request a new target vertex
             from geometry_utils import get_perimeter_points

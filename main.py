@@ -64,6 +64,11 @@ def main():
         # Agent updates
         for agent in agents:
             agent.update(gap_position)
+            # Visual feedback (Green -> Yellow -> Red based on frustration)
+            ratio = min(1.0, agent.frustration / agent.frustration_limit)
+            r = int(50 + ratio * 205)
+            g = int(150 - ratio * 150)
+            agent.shape.color = (r, g, 50, 255)
                 
         # Physics step
         dt = 1.0 / 60.0

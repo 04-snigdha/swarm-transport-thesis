@@ -1,9 +1,11 @@
 import pymunk
 import math
+import random
 
 class AgentState:
     SEARCHING = 1
     ATTACHED = 2
+    SHUFFLING = 3
 
 class Agent:
     def __init__(self, space, position, radius=5, mass=1.0):
@@ -22,27 +24,48 @@ class Agent:
         self.joint = None
         self.target_payload = None
         self.max_force = 200.0
+        
+        self.frustration = 0.0
+        self.frustration_limit = 100.0
+        self.shuffle_target = None
+
+    def _move_towards(self, tx, ty):
+        dx = tx - self.body.position.x
+        dy = ty - self.body.position.y
+        dist = math.hypot(dx, dy)
+        if dist > 0:
+            nx, ny = dx/dist, dy/dist
+            self.body.apply_force_at_local_point((nx * self.max_force, ny * self.max_force), (0, 0))
+        return dist
 
     def update(self, gap_pos):
         if self.state == AgentState.SEARCHING and self.target_payload:
-            # Scent gradient: Move towards payload center
-            dx = self.target_payload.position.x - self.body.position.x
-            dy = self.target_payload.position.y - self.body.position.y
-            dist = math.hypot(dx, dy)
-            
-            if dist > 0:
-                nx, ny = dx/dist, dy/dist
-                self.body.apply_force_at_local_point((nx * self.max_force, ny * self.max_force), (0, 0))
+            self._move_towards(self.target_payload.position.x, self.target_payload.position.y)
                 
         elif self.state == AgentState.ATTACHED:
-            # Global Taxis: Push towards the gap
-            dx = gap_pos[0] - self.body.position.x
-            dy = gap_pos[1] - self.body.position.y
-            dist = math.hypot(dx, dy)
+            # Check for stall via Frustration Metric (Psi)
+            velocity = self.target_payload.velocity.length
+            stall_threshold = 10.0
             
-            if dist > 0:
-                nx, ny = dx/dist, dy/dist
-                self.body.apply_force_at_local_point((nx * self.max_force, ny * self.max_force), (0, 0))
+            if velocity < stall_threshold:
+                self.frustration += 1.0
+            else:
+                self.frustration = max(0.0, self.frustration - 2.0)
+                
+            if self.frustration > self.frustration_limit:
+                self.detach()
+            else:
+                self._move_towards(gap_pos[0], gap_pos[1])
+                
+        elif self.state == AgentState.SHUFFLING:
+            self.frustration = max(0.0, self.frustration - 1.0)
+            if self.shuffle_target:
+                # Convert local shuffle target to world coordinates
+                world_target = self.target_payload.local_to_world(self.shuffle_target)
+                dist = self._move_towards(world_target.x, world_target.y)
+                if dist < 15.0: # Reached target vertex
+                    self.state = AgentState.SEARCHING
+                    self.shuffle_target = None
                 
     def attach(self, payload_body, contact_point):
         """Attaches to the payload rigidly using a PivotJoint."""
@@ -51,3 +74,17 @@ class Agent:
             self.space.add(self.joint)
             self.state = AgentState.ATTACHED
             self.target_payload = payload_body
+            self.frustration = 0.0
+
+    def detach(self):
+        """Detaches from the payload and enters SHUFFLING state."""
+        if self.state == AgentState.ATTACHED and self.joint:
+            self.space.remove(self.joint)
+            self.joint = None
+            self.state = AgentState.SHUFFLING
+            
+            # Request a new target vertex
+            from geometry_utils import get_perimeter_points
+            vertices = get_perimeter_points(self.target_payload)
+            if vertices:
+                self.shuffle_target = random.choice(vertices)

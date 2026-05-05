@@ -34,3 +34,14 @@ def create_l_shape_payload(space, position, mass=10.0):
     
     space.add(body, shape1, shape2)
     return body, [shape1, shape2]
+
+def get_perimeter_points(body):
+    """
+    Returns a list of local coordinate vertices for all polygonal shapes attached to the body.
+    These act as ideal targets for agent shuffling.
+    """
+    vertices = []
+    for shape in body.shapes:
+        if isinstance(shape, pymunk.Poly):
+            vertices.extend(shape.get_vertices())
+    return vertices

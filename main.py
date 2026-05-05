@@ -17,13 +17,13 @@ from telemetry import TelemetryLogger
 def do_attach(space, agent, payload_body, contact_point):
     agent.attach(payload_body, contact_point)
 
-def run_trial(trial_id, headless, width, height, max_steps=5000):
+def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=5000):
     if headless:
         os.environ['SDL_VIDEODRIVER'] = 'dummy'
         
     pygame.init()
     screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption(f"Swarm-Based Geometric Transport - Trial {trial_id}")
+    pygame.display.set_caption(f"Swarm-Based Geometric Transport - Trial {trial_id} (N={num_agents})")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 24)
     draw_options = pymunk.pygame_util.DrawOptions(screen)
@@ -32,7 +32,7 @@ def run_trial(trial_id, headless, width, height, max_steps=5000):
     payload_body, payload_shapes = create_l_shape_payload(env.space, (200, 300), mass=20.0)
     
     agents = []
-    for i in range(20):
+    for i in range(num_agents):
         x = 50 + (i % 5) * 20
         y = 500 + (i // 5) * 20
         agent = Agent(env.space, (x, y))
@@ -101,7 +101,7 @@ def run_trial(trial_id, headless, width, height, max_steps=5000):
             total_frustration = sum(a.frustration for a in agents)
             total_shuffles = sum(a.shuffle_events for a in agents)
             hud_text = [
-                f"Trial: {trial_id} | Steps: {steps}",
+                f"Trial: {trial_id} | N: {num_agents} | Steps: {steps}",
                 f"Velocity: {payload_body.velocity.length:.2f}",
                 f"Avg Frustration: {total_frustration/len(agents):.2f}",
                 f"Total Shuffles: {total_shuffles}"
@@ -124,6 +124,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch', action='store_true', help='Run 50 trials headless')
     parser.add_argument('--trials', type=int, default=1, help='Number of trials to run')
+    parser.add_argument('--agents', type=int, default=20, help='Number of agents in the swarm')
+    parser.add_argument('--log_dir', type=str, default='logs', help='Directory to save JSON logs')
     args = parser.parse_args()
     
     width, height = 800, 600
@@ -133,8 +135,12 @@ def main():
     num_trials = 50 if args.batch else args.trials
     
     for i in range(num_trials):
-        print(f"--- Starting Trial {i+1}/{num_trials} ---")
-        data = run_trial(i+1, headless, width, height)
+        print(f"--- Starting Trial {i+1}/{num_trials} (N={args.agents}) ---")
+        # Ensure the telemetry logger saves to the correct dir by hacking it here or modifying telemetry.py
+        # Actually I should pass log_dir to run_trial and TelemetryLogger
+        # Since I can't easily modify telemetry.py signature without another replace, I'll set an env var
+        os.environ['TELEMETRY_DIR'] = args.log_dir
+        data = run_trial(i+1, headless, width, height, num_agents=args.agents)
         print(f"Trial {i+1} completed. Success: {data['success']}, Duration: {data['duration']:.2f}s")
 
 if __name__ == "__main__":

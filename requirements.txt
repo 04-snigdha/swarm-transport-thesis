@@ -1,3 +1,5 @@
 pymunk
 pygame-ce
 numpy
+pandas
+matplotlib

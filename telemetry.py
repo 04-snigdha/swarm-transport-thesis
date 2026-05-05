@@ -3,8 +3,8 @@ import os
 import time
 
 class TelemetryLogger:
-    def __init__(self, output_dir="logs"):
-        self.output_dir = output_dir
+    def __init__(self, output_dir=None):
+        self.output_dir = output_dir or os.environ.get('TELEMETRY_DIR', 'logs')
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
             

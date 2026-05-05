@@ -3,8 +3,8 @@ import os
 import shutil
 
 def main():
-    swarm_sizes = [10, 15]
-    trials_per_size = 10
+    swarm_sizes = [8, 10, 12, 14, 16, 18, 20]
+    trials_per_size = 50
     base_log_dir = "logs"
     
     if os.path.exists(base_log_dir):

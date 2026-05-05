@@ -58,35 +58,50 @@ def main():
         json.dump(summary, f, indent=4)
         
     # Generate Plots
-    plt.figure(figsize=(15, 5))
+    plt.figure(figsize=(18, 6))
     
-    # 1. Success Rate
+    # 1. Success Rate Curve
     plt.subplot(1, 3, 1)
-    success_rate.plot(kind='bar', color='skyblue')
+    success_rate.plot(kind='line', marker='o', color='blue', linewidth=2)
     plt.title('Success Rate vs. Swarm Size')
     plt.ylabel('Success Rate (%)')
     plt.xlabel('Swarm Size (N)')
+    plt.grid(True)
+    if not success_rate.empty and success_rate.max() > 0:
+        best_n = success_rate.idxmax()
+        best_val = success_rate.max()
+        plt.annotate(f'Peak (N*={best_n})', xy=(best_n, best_val), xytext=(best_n, best_val+5),
+                     arrowprops=dict(facecolor='black', shrink=0.05), horizontalalignment='center')
     
-    # 2. Time to Success
+    # 2. Phase Transition Plot (Total Shuffles vs. Success Time)
     plt.subplot(1, 3, 2)
     if not success_df.empty:
-        success_df.boxplot(column='duration', by='swarm_size', ax=plt.gca())
-        plt.title('Time to Success vs. Swarm Size')
-        plt.suptitle('')
-        plt.ylabel('Duration (s)')
-        plt.xlabel('Swarm Size (N)')
+        plt.scatter(success_df['total_shuffles'], success_df['duration'], alpha=0.7, color='green')
+        plt.title('Phase Transition: Shuffles vs Duration (Success Cases)')
+        plt.xlabel('Total Shuffles')
+        plt.ylabel('Success Time (s)')
+        plt.grid(True)
+    else:
+        plt.text(0.5, 0.5, 'No Successful Trials', horizontalalignment='center', verticalalignment='center')
         
-    # 3. Frustration-Shuffle Correlation (using Total Shuffles vs Tortuosity)
+    # 3. Tortuosity vs. Success
     plt.subplot(1, 3, 3)
-    plt.scatter(df['total_shuffles'], df['tortuosity'], alpha=0.6, c=df['swarm_size'], cmap='viridis')
-    plt.colorbar(label='Swarm Size (N)')
-    plt.title('Shuffle Count vs Tortuosity')
-    plt.xlabel('Total Shuffles')
+    # Scatter plot comparing Tortuosity for Success vs Failure
+    colors = df['success'].map({True: 'green', False: 'red'})
+    plt.scatter(df['swarm_size'], df['tortuosity'], alpha=0.5, c=colors)
+    # Add custom legend
+    from matplotlib.lines import Line2D
+    legend_elements = [Line2D([0], [0], marker='o', color='w', markerfacecolor='green', markersize=8, label='Success'),
+                       Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=8, label='Failure')]
+    plt.legend(handles=legend_elements)
+    plt.title('Tortuosity Distribution vs Swarm Size')
+    plt.xlabel('Swarm Size (N)')
     plt.ylabel('Path Tortuosity')
+    plt.grid(True)
     
     plt.tight_layout()
-    plt.savefig('experiment_results.png')
-    print("\nPlots saved to 'experiment_results.png'.")
+    plt.savefig('experiment_results.png', dpi=300)
+    print("\nHigh-res plots saved to 'experiment_results.png'.")
 
 if __name__ == "__main__":
     main()

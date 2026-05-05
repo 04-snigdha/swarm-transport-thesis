@@ -33,7 +33,7 @@ class Environment:
         
         # Gap wall located at x = 500
         gap_x = 500
-        gap_width = 120
+        gap_width = 150
         gap_y_top = (self.height / 2) - (gap_width / 2)
         gap_y_bottom = (self.height / 2) + (gap_width / 2)
         

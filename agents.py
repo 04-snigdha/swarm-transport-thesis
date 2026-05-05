@@ -26,7 +26,7 @@ class Agent:
         self.max_force = 200.0
         
         self.frustration = 0.0
-        self.frustration_limit = 100.0
+        self.frustration_limit = 50.0
         self.shuffle_target = None
         self.shuffle_events = 0
 
@@ -49,7 +49,7 @@ class Agent:
             stall_threshold = 10.0
             
             if velocity < stall_threshold:
-                self.frustration += 1.0
+                self.frustration += 3.0
             else:
                 self.frustration = max(0.0, self.frustration - 2.0)
                 

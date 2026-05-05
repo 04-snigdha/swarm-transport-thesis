@@ -17,7 +17,7 @@ from telemetry import TelemetryLogger
 def do_attach(space, agent, payload_body, contact_point):
     agent.attach(payload_body, contact_point)
 
-def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=5000):
+def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=15000):
     if headless:
         os.environ['SDL_VIDEODRIVER'] = 'dummy'
         

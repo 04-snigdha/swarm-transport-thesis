@@ -29,6 +29,7 @@ class Agent:
         self.frustration_limit = 50.0
         self.shuffle_target = None
         self.shuffle_events = 0
+        self.current_force = (0.0, 0.0)
 
     def _move_towards(self, tx, ty):
         dx = tx - self.body.position.x
@@ -36,10 +37,13 @@ class Agent:
         dist = math.hypot(dx, dy)
         if dist > 0:
             nx, ny = dx/dist, dy/dist
-            self.body.apply_force_at_local_point((nx * self.max_force, ny * self.max_force), (0, 0))
+            force_vec = (nx * self.max_force, ny * self.max_force)
+            self.body.apply_force_at_local_point(force_vec, (0, 0))
+            self.current_force = force_vec
         return dist
 
     def update(self, gap_pos):
+        self.current_force = (0.0, 0.0)
         if self.state == AgentState.SEARCHING and self.target_payload:
             self._move_towards(self.target_payload.position.x, self.target_payload.position.y)
                 

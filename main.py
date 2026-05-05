@@ -99,7 +99,36 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=15000,
             if len(telemetry.trajectory_history) > 1:
                 pygame.draw.lines(screen, (100, 100, 255), False, telemetry.trajectory_history, 2)
             
+            # Calculate total torque
+            total_torque = 0.0
+            for agent in agents:
+                if agent.state == 2 and agent.joint: # ATTACHED
+                    r = agent.body.position - payload_body.position
+                    F = pymunk.Vec2d(*agent.current_force)
+                    torque = r.cross(F)
+                    total_torque += abs(torque)
+                    
+            # Draw Emergent Torque Glow
+            torque_ratio = min(1.0, total_torque / 100000.0)
+            glow_alpha = int(50 + torque_ratio * 200)
+            glow_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+            for shape in payload_shapes:
+                if isinstance(shape, pymunk.Poly):
+                    pts = [payload_body.local_to_world(v) for v in shape.get_vertices()]
+                    pts = [(int(p.x), int(p.y)) for p in pts]
+                    # Draw a thick outline that glows brightly under high torque
+                    pygame.draw.polygon(glow_surface, (255, 140, 0, glow_alpha), pts, width=8)
+            screen.blit(glow_surface, (0, 0))
+            
             env.space.debug_draw(draw_options)
+            
+            # Draw Force Vectors
+            for agent in agents:
+                fx, fy = agent.current_force
+                if fx != 0 or fy != 0:
+                    start_pos = (int(agent.body.position.x), int(agent.body.position.y))
+                    end_pos = (int(start_pos[0] + fx*0.1), int(start_pos[1] + fy*0.1))
+                    pygame.draw.line(screen, (0, 200, 255), start_pos, end_pos, 2)
             
             # HUD
             total_frustration = sum(a.frustration for a in agents)
@@ -108,7 +137,8 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=15000,
                 f"Trial: {trial_id} | N: {num_agents} | Steps: {steps}",
                 f"Velocity: {payload_body.velocity.length:.2f}",
                 f"Avg Frustration: {total_frustration/len(agents):.2f}",
-                f"Total Shuffles: {total_shuffles}"
+                f"Total Shuffles: {total_shuffles}",
+                f"Net Torque: {total_torque:.0f}"
             ]
             for i, txt in enumerate(hud_text):
                 surf = font.render(txt, True, (0, 0, 0))

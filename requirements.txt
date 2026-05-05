@@ -3,3 +3,6 @@ pygame-ce
 numpy
 pandas
 matplotlib
+seaborn
+scipy
+ipykernel

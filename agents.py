@@ -38,7 +38,8 @@ class Agent:
         if dist > 0:
             nx, ny = dx/dist, dy/dist
             force_vec = (nx * self.max_force, ny * self.max_force)
-            self.body.apply_force_at_local_point(force_vec, (0, 0))
+            # THESIS FIX: Using world points to prevent rotation-induced vector divergence
+            self.body.apply_force_at_world_point(force_vec, self.body.position)
             self.current_force = force_vec
         return dist
 

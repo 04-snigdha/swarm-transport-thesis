@@ -37,8 +37,8 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=15000,
     
     agents = []
     for i in range(num_agents):
-        x = 50 + (i % 5) * 20
-        y = 500 + (i // 5) * 20
+        x = 120 + (i % 5) * 20
+        y = 250 + (i // 5) * 20
         agent = Agent(env.space, (x, y))
         agent.target_payload = payload_body
         agents.append(agent)

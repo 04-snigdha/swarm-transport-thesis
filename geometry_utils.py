@@ -1,0 +1,36 @@
+"""
+Geometry Utilities
+Handles creation of complex, non-convex bodies for Pymunk.
+"""
+import pymunk
+
+def create_l_shape_payload(space, position, mass=10.0):
+    """
+    Creates an L-shaped non-convex payload by combining two rectangular shapes.
+    """
+    # Define vertices for the two arms relative to the center of mass
+    # Arm 1: Horizontal bottom (width 80, height 20)
+    arm1_verts = [(-40, -40), (40, -40), (40, -20), (-40, -20)]
+    # Arm 2: Vertical left (width 20, height 60)
+    arm2_verts = [(-40, -20), (-20, -20), (-20, 40), (-40, 40)]
+    
+    # Calculate moments
+    moment1 = pymunk.moment_for_poly(mass / 2, arm1_verts)
+    moment2 = pymunk.moment_for_poly(mass / 2, arm2_verts)
+    total_moment = moment1 + moment2
+    
+    body = pymunk.Body(mass, total_moment)
+    body.position = position
+    
+    shape1 = pymunk.Poly(body, arm1_verts)
+    shape2 = pymunk.Poly(body, arm2_verts)
+    
+    shape1.friction = 0.5
+    shape2.friction = 0.5
+    
+    # Custom collision type for payload (e.g., 1)
+    shape1.collision_type = 1
+    shape2.collision_type = 1
+    
+    space.add(body, shape1, shape2)
+    return body, [shape1, shape2]

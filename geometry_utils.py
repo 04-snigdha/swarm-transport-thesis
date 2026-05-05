@@ -35,6 +35,26 @@ def create_l_shape_payload(space, position, mass=10.0):
     space.add(body, shape1, shape2)
     return body, [shape1, shape2]
 
+def create_square_payload(space, position, mass=10.0):
+    """
+    Creates a convex square payload of equivalent area to the L-shape.
+    L-shape area: (80x20) + (20x60) = 1600 + 1200 = 2800.
+    Square side: sqrt(2800) ~= 53.
+    """
+    hs = 26.5 # Half-side
+    verts = [(-hs, -hs), (hs, -hs), (hs, hs), (-hs, hs)]
+    
+    moment = pymunk.moment_for_poly(mass, verts)
+    body = pymunk.Body(mass, moment)
+    body.position = position
+    
+    shape = pymunk.Poly(body, verts)
+    shape.friction = 0.5
+    shape.collision_type = 1
+    
+    space.add(body, shape)
+    return body, [shape]
+
 def get_perimeter_points(body):
     """
     Returns a list of local coordinate vertices for all polygonal shapes attached to the body.

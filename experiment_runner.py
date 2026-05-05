@@ -3,23 +3,24 @@ import os
 import shutil
 
 def main():
-    swarm_sizes = [8, 10, 12, 14, 16, 18, 20]
-    trials_per_size = 50
-    base_log_dir = "logs"
+    trials_per_size = 30
+    N = 16
+    base_log_dir = "logs/geometry_comparison"
     
     if os.path.exists(base_log_dir):
         shutil.rmtree(base_log_dir)
     os.makedirs(base_log_dir)
     
-    for N in swarm_sizes:
+    shapes = ['square', 'l_shape']
+    
+    for shape in shapes:
         print(f"\n========================================")
-        print(f"=== Starting Batch for N={N} (Trials: {trials_per_size}) ===")
+        print(f"=== Starting Batch for Shape={shape} (Trials: {trials_per_size}) ===")
         print(f"========================================\n")
         
-        n_log_dir = os.path.join(base_log_dir, f"N{N}")
+        n_log_dir = os.path.join(base_log_dir, shape)
         os.makedirs(n_log_dir)
         
-        # Execute main.py via subprocess
         env = os.environ.copy()
         env["HEADLESS"] = "1"
         
@@ -28,6 +29,7 @@ def main():
             sys.executable, "main.py",
             "--trials", str(trials_per_size),
             "--agents", str(N),
+            "--shape", shape,
             "--log_dir", n_log_dir
         ]
         
@@ -35,7 +37,7 @@ def main():
         process.wait()
         
         if process.returncode != 0:
-            print(f"Error running batch for N={N}")
+            print(f"Error running batch for shape={shape}")
             
     print("\nAll experiments completed.")
 

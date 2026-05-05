@@ -10,26 +10,30 @@ import argparse
 import time
 
 from environment import Environment
-from geometry_utils import create_l_shape_payload
+from geometry_utils import create_l_shape_payload, create_square_payload
 from agents import Agent
 from telemetry import TelemetryLogger
 
 def do_attach(space, agent, payload_body, contact_point):
     agent.attach(payload_body, contact_point)
 
-def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=15000):
+def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=15000, shape_type='l_shape'):
     if headless:
         os.environ['SDL_VIDEODRIVER'] = 'dummy'
         
     pygame.init()
     screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption(f"Swarm-Based Geometric Transport - Trial {trial_id} (N={num_agents})")
+    pygame.display.set_caption(f"Swarm-Based Geometric Transport - Trial {trial_id} (N={num_agents}, Shape={shape_type})")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 24)
     draw_options = pymunk.pygame_util.DrawOptions(screen)
     
     env = Environment(width, height)
-    payload_body, payload_shapes = create_l_shape_payload(env.space, (200, 300), mass=20.0)
+    
+    if shape_type == 'square':
+        payload_body, payload_shapes = create_square_payload(env.space, (200, 300), mass=20.0)
+    else:
+        payload_body, payload_shapes = create_l_shape_payload(env.space, (200, 300), mass=20.0)
     
     agents = []
     for i in range(num_agents):
@@ -126,6 +130,7 @@ def main():
     parser.add_argument('--trials', type=int, default=1, help='Number of trials to run')
     parser.add_argument('--agents', type=int, default=20, help='Number of agents in the swarm')
     parser.add_argument('--log_dir', type=str, default='logs', help='Directory to save JSON logs')
+    parser.add_argument('--shape', type=str, default='l_shape', choices=['l_shape', 'square'], help='Payload geometry shape')
     args = parser.parse_args()
     
     width, height = 800, 600
@@ -135,12 +140,9 @@ def main():
     num_trials = 50 if args.batch else args.trials
     
     for i in range(num_trials):
-        print(f"--- Starting Trial {i+1}/{num_trials} (N={args.agents}) ---")
-        # Ensure the telemetry logger saves to the correct dir by hacking it here or modifying telemetry.py
-        # Actually I should pass log_dir to run_trial and TelemetryLogger
-        # Since I can't easily modify telemetry.py signature without another replace, I'll set an env var
+        print(f"--- Starting Trial {i+1}/{num_trials} (N={args.agents}, Shape={args.shape}) ---")
         os.environ['TELEMETRY_DIR'] = args.log_dir
-        data = run_trial(i+1, headless, width, height, num_agents=args.agents)
+        data = run_trial(i+1, headless, width, height, num_agents=args.agents, shape_type=args.shape)
         print(f"Trial {i+1} completed. Success: {data['success']}, Duration: {data['duration']:.2f}s")
 
 if __name__ == "__main__":

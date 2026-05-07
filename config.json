@@ -1,0 +1,36 @@
+{
+    "simulation": {
+        "max_steps": 15000,
+        "dt": 0.016666666666666666
+    },
+    "environment": {
+        "width": 800,
+        "height": 600,
+        "gap_size": 150,
+        "wall_thickness": 5.0,
+        "gap_x": 500
+    },
+    "payload": {
+        "spawn_pos": [200, 300],
+        "mass": 20.0
+    },
+    "agents": {
+        "spawn_base_x": 120,
+        "spawn_base_y": 250,
+        "spawn_spacing": 20,
+        "mass": 1.0,
+        "radius": 5,
+        "max_force": 200.0,
+        "frustration_limit": 50.0,
+        "frustration_gain": 3.0,
+        "stall_threshold": 10.0
+    },
+    "colors": {
+        "background": [240, 240, 240],
+        "payload_outline": [255, 140, 0],
+        "agent_base": [50, 150, 50, 255],
+        "force_vector": [0, 200, 255],
+        "hud_text": [0, 0, 0],
+        "trajectory": [100, 100, 255]
+    }
+}

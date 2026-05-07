@@ -3,11 +3,15 @@ Environment Module
 Sets up the Pymunk physics space and the static boundaries (walls and gap).
 """
 import pymunk
+import json
+
+with open("config.json", "r") as f:
+    config = json.load(f)
 
 class Environment:
-    def __init__(self, width=800, height=600):
-        self.width = width
-        self.height = height
+    def __init__(self, width=None, height=None):
+        self.width = width if width is not None else config["environment"]["width"]
+        self.height = height if height is not None else config["environment"]["height"]
         
         # Initialize Pymunk space
         self.space = pymunk.Space()
@@ -31,9 +35,10 @@ class Environment:
             [(0, self.height), (0, 0)]
         ]
         
-        # Gap wall located at x = 500
-        gap_x = 500
-        gap_width = 150
+        # Gap wall
+        gap_x = config["environment"].get("gap_x", 500)
+        gap_width = config["environment"]["gap_size"]
+        wall_radius = config["environment"].get("wall_thickness", 5.0)
         gap_y_top = (self.height / 2) - (gap_width / 2)
         gap_y_bottom = (self.height / 2) + (gap_width / 2)
         
@@ -43,7 +48,7 @@ class Environment:
         ])
         
         for p1, p2 in boundaries:
-            shape = pymunk.Segment(static_body, p1, p2, radius=5.0)
+            shape = pymunk.Segment(static_body, p1, p2, radius=wall_radius)
             shape.elasticity = 0.3
             shape.friction = 0.8
             self.space.add(shape)

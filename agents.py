@@ -1,6 +1,10 @@
 import pymunk
 import math
 import random
+import json
+
+with open("config.json", "r") as f:
+    config = json.load(f)
 
 class AgentState:
     SEARCHING = 1
@@ -8,25 +12,29 @@ class AgentState:
     SHUFFLING = 3
 
 class Agent:
-    def __init__(self, space, position, radius=5, mass=1.0):
+    def __init__(self, space, position, radius=None, mass=None):
         self.space = space
+        
+        radius = radius if radius is not None else config["agents"]["radius"]
+        mass = mass if mass is not None else config["agents"]["mass"]
+        
         self.body = pymunk.Body(mass, pymunk.moment_for_circle(mass, 0, radius))
         self.body.position = position
         
         self.shape = pymunk.Circle(self.body, radius)
         self.shape.friction = 0.5
         self.shape.collision_type = 2  # 2 for Agent
-        self.shape.color = (50, 150, 50, 255) # Green
+        self.shape.color = tuple(config["colors"]["agent_base"])
         
         self.space.add(self.body, self.shape)
         
         self.state = AgentState.SEARCHING
         self.joint = None
         self.target_payload = None
-        self.max_force = 200.0
+        self.max_force = config["agents"]["max_force"]
         
         self.frustration = 0.0
-        self.frustration_limit = 50.0
+        self.frustration_limit = config["agents"]["frustration_limit"]
         self.shuffle_target = None
         self.shuffle_events = 0
         self.current_force = (0.0, 0.0)
@@ -51,10 +59,10 @@ class Agent:
         elif self.state == AgentState.ATTACHED:
             # Check for stall via Frustration Metric (Psi)
             velocity = self.target_payload.velocity.length
-            stall_threshold = 10.0
+            stall_threshold = config["agents"]["stall_threshold"]
             
             if velocity < stall_threshold:
-                self.frustration += 3.0
+                self.frustration += config["agents"]["frustration_gain"]
             else:
                 self.frustration = max(0.0, self.frustration - 2.0)
                 

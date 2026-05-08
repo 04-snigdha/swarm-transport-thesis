@@ -3,8 +3,9 @@ Geometry Utilities
 Handles creation of complex, non-convex bodies for Pymunk.
 """
 import pymunk
+from typing import Tuple, List
 
-def create_l_shape_payload(space, position, mass=10.0):
+def create_l_shape_payload(space: pymunk.Space, position: Tuple[float, float], mass: float = 10.0) -> Tuple[pymunk.Body, List[pymunk.Shape]]:
     """
     Creates an L-shaped non-convex payload by combining two rectangular shapes.
     """
@@ -35,7 +36,7 @@ def create_l_shape_payload(space, position, mass=10.0):
     space.add(body, shape1, shape2)
     return body, [shape1, shape2]
 
-def create_square_payload(space, position, mass=10.0):
+def create_square_payload(space: pymunk.Space, position: Tuple[float, float], mass: float = 10.0) -> Tuple[pymunk.Body, List[pymunk.Shape]]:
     """
     Creates a convex square payload of equivalent area to the L-shape.
     L-shape area: (80x20) + (20x60) = 1600 + 1200 = 2800.
@@ -55,7 +56,7 @@ def create_square_payload(space, position, mass=10.0):
     space.add(body, shape)
     return body, [shape]
 
-def get_perimeter_points(body):
+def get_perimeter_points(body: pymunk.Body) -> List[pymunk.Vec2d]:
     """
     Returns a list of local coordinate vertices for all polygonal shapes attached to the body.
     These act as ideal targets for agent shuffling.
@@ -66,7 +67,7 @@ def get_perimeter_points(body):
             vertices.extend(shape.get_vertices())
     return vertices
 
-def get_bounding_box(body):
+def get_bounding_box(body: pymunk.Body) -> Tuple[float, float, float, float]:
     """
     Calculates the AABB bounding box for the composite body.
     """

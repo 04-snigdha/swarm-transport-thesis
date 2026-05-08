@@ -2,6 +2,7 @@ import pymunk
 import math
 import random
 import json
+from typing import Tuple, Optional
 
 with open("config.json", "r") as f:
     config = json.load(f)
@@ -12,7 +13,7 @@ class AgentState:
     SHUFFLING = 3
 
 class Agent:
-    def __init__(self, space, position, radius=None, mass=None):
+    def __init__(self, space: pymunk.Space, position: Tuple[float, float], radius: Optional[float] = None, mass: Optional[float] = None) -> None:
         self.space = space
         
         radius = radius if radius is not None else config["agents"]["radius"]
@@ -37,9 +38,9 @@ class Agent:
         self.frustration_limit = config["agents"]["frustration_limit"]
         self.shuffle_target = None
         self.shuffle_events = 0
-        self.current_force = (0.0, 0.0)
+        self.current_force: Tuple[float, float] = (0.0, 0.0)
 
-    def _move_towards(self, tx, ty):
+    def _move_towards(self, tx: float, ty: float) -> float:
         dx = tx - self.body.position.x
         dy = ty - self.body.position.y
         dist = math.hypot(dx, dy)
@@ -51,7 +52,7 @@ class Agent:
             self.current_force = force_vec
         return dist
 
-    def update(self, gap_pos):
+    def update(self, gap_pos: Tuple[float, float]) -> None:
         self.current_force = (0.0, 0.0)
         if self.state == AgentState.SEARCHING and self.target_payload:
             self._move_towards(self.target_payload.position.x, self.target_payload.position.y)
@@ -81,7 +82,7 @@ class Agent:
                     self.state = AgentState.SEARCHING
                     self.shuffle_target = None
                 
-    def attach(self, payload_body, contact_point):
+    def attach(self, payload_body: pymunk.Body, contact_point: Tuple[float, float]) -> None:
         """Attaches to the payload rigidly using a PivotJoint."""
         if self.state == AgentState.SEARCHING:
             self.joint = pymunk.PivotJoint(self.body, payload_body, contact_point)
@@ -90,7 +91,7 @@ class Agent:
             self.target_payload = payload_body
             self.frustration = 0.0
 
-    def detach(self):
+    def detach(self) -> None:
         """Detaches from the payload and enters SHUFFLING state."""
         if self.state == AgentState.ATTACHED and self.joint:
             self.space.remove(self.joint)

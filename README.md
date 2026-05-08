@@ -48,6 +48,34 @@ Launch Jupyter to view the interactive plots and statistical T-tests.
 ```bash
 jupyter notebook thesis_analysis.ipynb
 ```
+## Swarm Architecture
 
+```mermaid
+stateDiagram-v2
+    direction TB
+    
+    [*] --> SEARCHING : Agent Spawns
+    SEARCHING --> ATTACHED : Collides with Payload
+
+    state ATTACHED {
+        direction LR
+        [*] --> Push : Apply Force to Goal
+        Push --> Evaluate : Measure Payload Velocity
+        Evaluate --> HighFrustration : Velocity < Stall Threshold
+        Evaluate --> LowFrustration : Velocity > Stall Threshold
+        LowFrustration --> Push : Maintain State
+    }
+
+    ATTACHED --> SHUFFLING : Frustration > Limit (Geometric Jam)
+
+    state SHUFFLING {
+        direction LR
+        [*] --> Target : Select Random Perimeter Vertex
+        Target --> Orbit : Navigate to Target
+        Orbit --> [*] : Reached Target Vertex
+    }
+
+    SHUFFLING --> ATTACHED : Re-attach at New Position
+```
 ---
 *Developed as a Bachelor's Thesis concluding the Physics & AI codebase development.*

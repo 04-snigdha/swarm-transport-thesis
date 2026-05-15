@@ -143,7 +143,7 @@ class SwarmEnv(ParallelEnv):
         
         # Gridlock detection
         is_gridlocked = False
-        if self.step_count % self.gridlock_check_interval == 0:
+        if self.step_count > 800 and self.step_count % self.gridlock_check_interval == 0:
             current_pos = self.payload_body.position
             if len(self.position_history) > 0:
                 last_pos = self.position_history[-1]

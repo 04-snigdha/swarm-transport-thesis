@@ -123,7 +123,26 @@ class SwarmEnv(ParallelEnv):
         for agent_id, action in actions.items():
             agent_obj = self.agent_objects[agent_id]
             
-            if action == 0:
+            if action == 0:  # Move / Search
+                # 1. Get local vector
+                gx, gy = self.grid.get_vector(agent_obj.body.position.x, agent_obj.body.position.y)
+                mag = math.hypot(gx, gy)
+                
+                # 2. Check if scent exists
+                if mag > 1e-5:
+                    # Scent found: Gradient Ascent
+                    fx = (gx / mag) * agent_obj.max_force
+                    fy = (gy / mag) * agent_obj.max_force
+                else:
+                    # No scent: Random Walk (Exploration)
+                    angle = random.uniform(0, 2 * math.pi)
+                    fx = math.cos(angle) * agent_obj.max_force
+                    fy = math.sin(angle) * agent_obj.max_force
+                    
+                agent_obj.body.apply_force_at_world_point((fx, fy), agent_obj.body.position)
+                agent_obj.current_force = (fx, fy)
+                
+                # Still call update to handle internal state if needed
                 agent_obj.update(self.payload_body, grid=self.grid)
             elif action == 1:
                 if agent_obj.state == AgentState.ATTACHED:

@@ -52,14 +52,30 @@ class Agent:
             self.current_force = force_vec
         return dist
 
-    def update(self, gap_pos: Tuple[float, float]) -> None:
+    def update(self, payload_body: pymunk.Body, grid=None) -> None:
         self.current_force = (0.0, 0.0)
-        if self.state == AgentState.SEARCHING and self.target_payload:
-            self._move_towards(self.target_payload.position.x, self.target_payload.position.y)
+        if self.state == AgentState.SEARCHING:
+            if grid:
+                gx, gy = grid.get_vector(self.body.position.x, self.body.position.y)
+                mag = math.hypot(gx, gy)
+                if mag > 1e-5:
+                    nx, ny = gx/mag, gy/mag
+                    force_vec = (nx * self.max_force, ny * self.max_force)
+                    self.body.apply_force_at_world_point(force_vec, self.body.position)
+                    self.current_force = force_vec
+                else:
+                    # Random Walk
+                    angle = random.uniform(0, 2 * math.pi)
+                    nx, ny = math.cos(angle), math.sin(angle)
+                    force_vec = (nx * self.max_force, ny * self.max_force)
+                    self.body.apply_force_at_world_point(force_vec, self.body.position)
+                    self.current_force = force_vec
+            elif self.target_payload:
+                self._move_towards(self.target_payload.position.x, self.target_payload.position.y)
                 
         elif self.state == AgentState.ATTACHED:
             # Check for stall via Frustration Metric (Psi)
-            velocity = self.target_payload.velocity.length
+            velocity = payload_body.velocity.length
             stall_threshold = config["agents"]["stall_threshold"]
             
             if velocity < stall_threshold:
@@ -70,13 +86,15 @@ class Agent:
             if self.frustration > self.frustration_limit:
                 self.detach()
             else:
-                self._move_towards(gap_pos[0], gap_pos[1])
+                gap_x = config["environment"]["gap_x"]
+                gap_y = config["environment"]["height"] / 2.0
+                self._move_towards(gap_x, gap_y)
                 
         elif self.state == AgentState.SHUFFLING:
             self.frustration = max(0.0, self.frustration - 1.0)
             if self.shuffle_target:
                 # Convert local shuffle target to world coordinates
-                world_target = self.target_payload.local_to_world(self.shuffle_target)
+                world_target = payload_body.local_to_world(self.shuffle_target)
                 dist = self._move_towards(world_target.x, world_target.y)
                 if dist < 15.0: # Reached target vertex
                     self.state = AgentState.SEARCHING

@@ -17,6 +17,7 @@
         "mass": 20.0
     },
     "agents": {
+        "home_base": [700, 300],
         "spawn_base_x": 120,
         "spawn_base_y": 250,
         "spawn_spacing": 20,

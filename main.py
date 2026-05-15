@@ -9,6 +9,7 @@ import os
 import argparse
 import time
 import math
+import random
 
 from environment import Environment
 from geometry_utils import create_l_shape_payload, create_square_payload
@@ -46,13 +47,11 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=None, 
         payload_body, payload_shapes = create_l_shape_payload(env.space, spawn_pos, mass=mass)
     
     agents = []
-    spawn_base_x = config["agents"]["spawn_base_x"]
-    spawn_base_y = config["agents"]["spawn_base_y"]
-    spawn_spacing = config["agents"]["spawn_spacing"]
+    home_base = config["agents"].get("home_base", [700, 300])
     
     for i in range(num_agents):
-        x = spawn_base_x + (i % 5) * spawn_spacing
-        y = spawn_base_y + (i // 5) * spawn_spacing
+        x = home_base[0] + random.uniform(-50, 50)
+        y = home_base[1] + random.uniform(-50, 50)
         agent = Agent(env.space, (x, y))
         agent.target_payload = payload_body
         agents.append(agent)
@@ -91,7 +90,7 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=None, 
                 
         # Agent updates
         for agent in agents:
-            agent.update(gap_position)
+            agent.update(payload_body, grid=grid)
             ratio = min(1.0, agent.frustration / agent.frustration_limit)
             r = int(50 + ratio * 205)
             g = int(150 - ratio * 150)

@@ -7,3 +7,13 @@ env/
 *.log
 .vscode/
 .idea/
+
+# RL outputs
+models/
+ppo_swarm_tensorboard/
+*.zip
+
+# Simulation outputs
+logs/
+*.png
+*.gif

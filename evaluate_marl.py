@@ -29,7 +29,7 @@ def main():
 
         actions = {}
         for agent_id in env.possible_agents:
-            action, _states = model.predict(obs[agent_id], deterministic=True)
+            action, _states = model.predict(obs[agent_id], deterministic=False)
             actions[agent_id] = action
             
         obs, rewards, terminations, truncations, infos = env.step(actions)

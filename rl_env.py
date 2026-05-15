@@ -25,10 +25,10 @@ class SwarmEnv(ParallelEnv):
 
     def __init__(self, render_mode=None, num_agents=20, shape_type='l_shape'):
         self.render_mode = render_mode
-        self.num_agents = num_agents
+        self._num_agents = num_agents
         self.shape_type = shape_type
         
-        self.possible_agents = [f"ant_{i}" for i in range(self.num_agents)]
+        self.possible_agents = [f"ant_{i}" for i in range(self._num_agents)]
         self.agents = self.possible_agents[:]
         
         self.width = config["environment"]["width"]

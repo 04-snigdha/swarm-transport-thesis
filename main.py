@@ -8,6 +8,7 @@ import sys
 import os
 import argparse
 import time
+import math
 
 from environment import Environment
 from geometry_utils import create_l_shape_payload, create_square_payload
@@ -71,6 +72,10 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=None, 
     success = False
     running = True
     
+    position_history = []
+    check_interval = config["simulation"].get("gridlock_check_interval", 100)
+    gridlock_tolerance = config["simulation"].get("gridlock_tolerance", 1.0)
+    
     while running and steps < max_steps:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -102,6 +107,19 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=None, 
             if not headless:
                 pygame.image.save(screen, f"screenshot_success_{trial_id}.png")
                 print(f"Success! Screenshot saved for trial {trial_id}.")
+                
+        # Gridlock detection
+        if steps % check_interval == 0:
+            current_pos = payload_body.position
+            if len(position_history) > 0:
+                last_pos = position_history[-1]
+                dist = math.hypot(current_pos.x - last_pos[0], current_pos.y - last_pos[1])
+                
+                # If it moved less than the tolerance, it's gridlocked!
+                if dist < gridlock_tolerance:
+                    print(f"Gridlock detected at step {steps}. Terminating trial.")
+                    running = False
+            position_history.append((current_pos.x, current_pos.y))
         
         # Render
         if not headless:

@@ -1,7 +1,9 @@
 {
     "simulation": {
         "max_steps": 15000,
-        "dt": 0.016666666666666666
+        "dt": 0.016666666666666666,
+        "gridlock_check_interval": 100,
+        "gridlock_tolerance": 1.0
     },
     "environment": {
         "width": 800,

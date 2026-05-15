@@ -37,7 +37,8 @@ class Environment:
         
         # Gap wall
         gap_x = config["environment"].get("gap_x", 500)
-        gap_width = config["environment"]["gap_size"]
+        gap_mode = config["environment"].get("current_gap_mode", "normal")
+        gap_width = config["environment"].get("gap_sizes", {}).get(gap_mode, 150)
         wall_radius = config["environment"].get("wall_thickness", 5.0)
         gap_y_top = (self.height / 2) - (gap_width / 2)
         gap_y_bottom = (self.height / 2) + (gap_width / 2)

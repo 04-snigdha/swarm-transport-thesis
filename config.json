@@ -8,7 +8,12 @@
     "environment": {
         "width": 800,
         "height": 600,
-        "gap_size": 150,
+        "gap_sizes": {
+            "normal": 150,
+            "tight_square": 65,
+            "extreme_l_shape": 45
+        },
+        "current_gap_mode": "tight_square",
         "wall_thickness": 5.0,
         "gap_x": 500
     },

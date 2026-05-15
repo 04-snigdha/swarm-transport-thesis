@@ -1,4 +1,5 @@
 import pygame
+import pymunk.pygame_util
 from stable_baselines3 import PPO
 from rl_env import SwarmEnv
 
@@ -14,7 +15,11 @@ def main():
     
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
+    pygame.display.set_caption("Swarm RL Evaluation")
     clock = pygame.time.Clock()
+    
+    # Secret Weapon: Automatically draws everything in the Pymunk space!
+    draw_options = pymunk.pygame_util.DrawOptions(screen)
 
     running = True
     while running:
@@ -22,27 +27,25 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        # 1. AI decides actions
         actions = {}
-        # Use possible_agents to guarantee it finds the agents
         for agent_id in env.possible_agents:
             action, _states = model.predict(obs[agent_id], deterministic=True)
             actions[agent_id] = action
             
-        # 2. Step the environment
         obs, rewards, terminations, truncations, infos = env.step(actions)
         
-        # 3. Check if the episode ended (gridlock or success)
+        # If the episode triggers the Gridlock limit or finishes
         if any(terminations.values()) or any(truncations.values()):
-            print("Episode ended. Resetting environment...")
+            print("Gridlock or Termination reached. Resetting...")
             obs, info = env.reset()
+            # Give the user a brief 0.5-second pause to process the reset visually
+            pygame.time.wait(500) 
         
-        # 4. Render the environment
-        screen.fill((255, 255, 255)) # White background
+        # Render the environment
+        screen.fill((255, 255, 255)) 
         
-        # Note: Ensure your custom Pygame drawing functions (from main.py) 
-        # are called here to draw the walls, payload, and agents!
-        # Example: env.render(screen) if you built a render method.
+        # Draw the physical space automatically
+        env.sim_env.space.debug_draw(draw_options)
         
         pygame.display.flip()
         clock.tick(60)

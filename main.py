@@ -14,6 +14,7 @@ from environment import Environment
 from geometry_utils import create_l_shape_payload, create_square_payload
 from agents import Agent
 from telemetry import TelemetryLogger
+from pheromone import VectorPheromoneGrid
 import json
 
 with open("config.json", "r") as f:
@@ -68,6 +69,9 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=None, 
     gap_position = (config["environment"]["gap_x"], config["environment"]["height"] / 2)
     telemetry = TelemetryLogger()
     
+    pheromone_config = config["pheromones"]
+    grid = VectorPheromoneGrid(width, height, pheromone_config["resolution"])
+    
     steps = 0
     success = False
     running = True
@@ -96,6 +100,10 @@ def run_trial(trial_id, headless, width, height, num_agents=20, max_steps=None, 
         # Physics step
         dt = config["simulation"]["dt"]
         env.step(dt)
+        
+        # Pheromone step
+        grid.update(pheromone_config["decay_rate"], pheromone_config["diffusion_sigma"])
+        grid.add_pheromone(payload_body.position.x, payload_body.position.y, pheromone_config["drop_amount"])
         
         # Telemetry
         telemetry.log_step(payload_body, agents)

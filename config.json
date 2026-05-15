@@ -34,5 +34,11 @@
         "force_vector": [0, 200, 255],
         "hud_text": [0, 0, 0],
         "trajectory": [100, 100, 255]
+    },
+    "pheromones": {
+        "resolution": 10,
+        "decay_rate": 0.02,
+        "diffusion_sigma": 1.5,
+        "drop_amount": 10.0
     }
 }

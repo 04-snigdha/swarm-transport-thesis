@@ -9,3 +9,4 @@ ipykernel
 pettingzoo
 gymnasium
 supersuit
+stable-baselines3
